@@ -35,11 +35,8 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
-import java.sql.Time;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.text.DateFormat;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -53,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private LocationCallback locationCallback;
 
 
-    private long UPDATE_TIME_SEC_FOR_HIGH_ACCURACY = 5000;
+    private long UPDATE_TIME_SEC_FOR_HIGH_ACCURACY = 10000;
     private long UPDATE_TIME_SEC_FOR_BALANCED_ACCURACY = 20000;
     private long UPDATE_TIME_SEC_FOR_LOW_POWER = 30000;
     private final int REQUEST_CHECK_SETTING = 1111;
@@ -83,20 +80,16 @@ public class MainActivity extends AppCompatActivity {
         packageManager = this.getPackageManager();
 
 
-
         //Client 建構
         client = LocationServices.getFusedLocationProviderClient(this);
         //settingsClient 設定依時間取得座標
         settingsClient = LocationServices.getSettingsClient(this);
         createLocationCallback();
-
-
         createHIGHLocationRequest();
-//        createBALENCELocationRequest();
-//        createLOWPOWERLocationRequest();
 
-        builderAllLocationSettingRequest();
+        builderHIGH_ACCURACYLocationSettingRequest();
         startLocationUpdates();
+
     }
 
     @Override
@@ -104,9 +97,6 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         if (!checkPermissions()){
             requestPermissions();
-        }else{
-            startLocationUpdates();
-            getLastLocation();
         }
 
     }
@@ -167,10 +157,14 @@ public class MainActivity extends AppCompatActivity {
 
             }
 
+            //當前選擇的位置判斷是否可運作
             @Override
             public void onLocationAvailability(LocationAvailability locationAvailability) {
                 super.onLocationAvailability(locationAvailability);
                 Log.v("ppking" , "onLocationAvailability ! "  + locationAvailability.toString());
+                if (!locationAvailability.isLocationAvailable()){
+                    Toast.makeText(MainActivity.this , providerText + "無法定位，正在切換定位方法" , Toast.LENGTH_SHORT).show();
+                }
             }
         };
     }
@@ -181,7 +175,6 @@ public class MainActivity extends AppCompatActivity {
                     @SuppressLint("MissingPermission")
                     @Override
                     public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                        checkProvider();
                         client.requestLocationUpdates(HIGH_ACCURACY_LocationRequest, locationCallback, Looper.myLooper());
                         Log.v("ppking" , "onSuccess !!");
                     }
@@ -215,9 +208,10 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void builderAllLocationSettingRequest(){
+    //設定位置精確度
+    private void builderHIGH_ACCURACYLocationSettingRequest(){
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-        builder.addLocationRequest(BALANCED_POWER_ACCURACY_LocationRequest);
+        builder.addLocationRequest(HIGH_ACCURACY_LocationRequest);
         locationSettingsRequest = builder.build();
     }
 
@@ -245,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //丟出未開啟的狀態，選擇確定或取消後的動作選擇
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode){
@@ -257,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
                     case Activity.RESULT_CANCELED:
                         Log.v("ppking" , "RESULT_CANCELED !!");
                         Toast.makeText(MainActivity.this , "請打開GPS定位!" , Toast.LENGTH_SHORT).show();
-                        startLocationUpdates();
+                        //startLocationUpdates();
                         break;
                 }
                 break;
@@ -287,12 +282,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
-        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-
-        Date curDate = new Date(System.currentTimeMillis()) ; // 獲取當前時間
-
-        String str = formatter.format(curDate);
+        String str = DateFormat.getDateTimeInstance().format(new Date());
 
         time.setText("經緯度 : \n "+str);
 //        Log.v("ppking"  , " checkProvider bleUsable : "+bleUsable);
