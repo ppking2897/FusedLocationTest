@@ -6,35 +6,7 @@
     >
 
     <ScrollView
-        android:layout_weight="1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-
-        >
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            >
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="提供者:"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp"
-                />
-            <TextView
-                android:id="@+id/provider"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                />
-        </LinearLayout>
-
-    </ScrollView>
-
-    <ScrollView
-        android:layout_weight="1"
+        android:layout_weight="10"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
 
@@ -43,15 +15,55 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
+            android:layout_marginBottom="20dp"
             >
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="提供者:"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                />
+            <TextView
+                android:id="@+id/provider"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text=""
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="  時間 : "
+                />
+            <TextView
                 android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                />
+        </LinearLayout>
+
+    </ScrollView>
+
+
+    <ScrollView
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginTop="30dp"
+
+        >
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="經緯度:"
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
-                android:layout_gravity="bottom"
+                android:layout_gravity="top"
                 />
             <TextView
                 android:id="@+id/location"

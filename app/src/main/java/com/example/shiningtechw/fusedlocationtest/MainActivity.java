@@ -36,6 +36,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private LocationCallback locationCallback;
 
 
-    private long UPDATE_TIME_SEC_FOR_HIGH_ACCURACY = 10000;
+    private long UPDATE_TIME_SEC_FOR_HIGH_ACCURACY = 5000;
     private long UPDATE_TIME_SEC_FOR_BALANCED_ACCURACY = 20000;
     private long UPDATE_TIME_SEC_FOR_LOW_POWER = 30000;
     private final int REQUEST_CHECK_SETTING = 1111;
@@ -63,7 +64,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     private TextView providerText , locationText , time;
+    private ArrayList<String> arrayList = new ArrayList();
 
+    private long startTime , endTime;
 
 
     @Override
@@ -100,6 +103,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        startLocationUpdates();
+//    }
 
     @SuppressLint("MissingPermission")
     public void getLastLocation(){
@@ -152,18 +161,34 @@ public class MainActivity extends AppCompatActivity {
 
                 checkProvider();
 
-                locationText.append(""+location.getLatitude() + "  " + location.getLongitude() +"\n");
+                arrayList.add(0 , location.getLatitude() + "  " + location.getLongitude() + "\n" );
 
+                locationText.setText("");
+
+                for (int i = 0 ; i < arrayList.size() ; i++){
+
+                    locationText.append(arrayList.get(i));
+                }
 
             }
 
             //當前選擇的位置判斷是否可運作
             @Override
             public void onLocationAvailability(LocationAvailability locationAvailability) {
+
                 super.onLocationAvailability(locationAvailability);
                 Log.v("ppking" , "onLocationAvailability ! "  + locationAvailability.toString());
                 if (!locationAvailability.isLocationAvailable()){
-                    Toast.makeText(MainActivity.this , providerText + "無法定位，正在切換定位方法" , Toast.LENGTH_SHORT).show();
+                    startTime = System.currentTimeMillis();
+                    Toast.makeText(MainActivity.this ,  "目前定位還未成功，請稍後" , Toast.LENGTH_SHORT).show();
+                    checkProvider();
+                }else {
+                    if (startTime!=0){
+                        endTime = System.currentTimeMillis();
+                        long totTime = endTime -startTime;
+                        Toast.makeText(MainActivity.this , "定位成功,花費時間為 : " + totTime/1000 + " 秒" , Toast.LENGTH_SHORT).show();
+                    }
+
                 }
             }
         };
@@ -251,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case Activity.RESULT_CANCELED:
                         Log.v("ppking" , "RESULT_CANCELED !!");
-                        Toast.makeText(MainActivity.this , "請打開GPS定位!" , Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this , "建議打開GPS定位，以便取得最佳位置" , Toast.LENGTH_SHORT).show();
                         //startLocationUpdates();
                         break;
                 }
@@ -277,14 +302,14 @@ public class MainActivity extends AppCompatActivity {
         }else if (networkPresent&&networkUsable){
             providerText.setText("NET Provider\n");
         }else {
-            providerText.append("no Provider\n");
+            providerText.setText("no Provider\n");
             Toast.makeText(this , "定位失敗，請檢查設備" , Toast.LENGTH_SHORT).show();
         }
 
 
         String str = DateFormat.getDateTimeInstance().format(new Date());
 
-        time.setText("經緯度 : \n "+str);
+        time.setText(str);
 //        Log.v("ppking"  , " checkProvider bleUsable : "+bleUsable);
 //        Log.v("ppking"  , " checkProvider blePresent : "+blePresent);
     }
