@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Looper;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -43,7 +45,9 @@ public class FusedLocation {
     private LocationCallback locationCallback;
     private LocationRequest locationRequest = new LocationRequest();
     private LocationSettingsRequest.Builder settingRequestBuilder = new LocationSettingsRequest.Builder();
-    //設定獲取秒數  setFastestInterval /2 為快取秒數
+
+
+    private LocationSettingsStates locationSettingsStates;
     public final static int REQUEST_CHECK_SETTING = 123;
     private Location mLocation;
     private LocationManager mLocationManager;
@@ -51,32 +55,27 @@ public class FusedLocation {
     private long startTime, endTime;
     private double aDoubleLatitude, aDoubleLongitude;
     private int warringCount = 0;
+    private String provider;
 
     public FusedLocation(Activity ttActivity) {
         this.mActivity = ttActivity;
         mPackageManager = ttActivity.getPackageManager();
         mLocationManager = (LocationManager) ttActivity.getSystemService(Context.LOCATION_SERVICE);
 
-        initFusedLocation();
-    }
-
-    private void initFusedLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(mActivity);
         settingsClient = LocationServices.getSettingsClient(mActivity);
-
     }
 
-    public void createLocationRequest(long interval, long fast, int priority) {
-        //100 HighAccuracy
-        //102 Balance
-        locationRequest.setInterval(interval);
-        locationRequest.setFastestInterval(fast);
-        locationRequest.setPriority(priority);
+
+    public void createLocationRequest(long intervalTime, long fastTime, @PriorityDefine.PriorityType int type) {
+
+        locationRequest.setInterval(intervalTime);
+        locationRequest.setFastestInterval(fastTime);
+        locationRequest.setPriority(type);
 
         settingRequestBuilder.addLocationRequest(locationRequest);
         locationSettingsRequest = settingRequestBuilder.build();
 
-        startLocationUpdates();
         createLocationCallback();
     }
 
@@ -133,7 +132,6 @@ public class FusedLocation {
 
     private boolean isAccuracyNoUse() {
         //前三次判斷GPS，之後第四次切換到其他精確度，再確認三次取消後，不繼續做詢問動作並執行destroy方法
-
         warringCount++;
         if (warringCount < 3 && locationRequest.getPriority() == LocationRequest.PRIORITY_HIGH_ACCURACY) {
             Toast.makeText(mActivity, "請打開GPS定位!", Toast.LENGTH_SHORT).show();
@@ -159,12 +157,12 @@ public class FusedLocation {
                 super.onLocationResult(locationResult);
 
                 mLocation = locationResult.getLastLocation();
-
+                Log.v("ppking" , "aDoubleLatitude " + mLocation.getLatitude());
+                Log.v("ppking" , "aDoubleLongitude " + mLocation.getLongitude());
                 aDoubleLatitude = mLocation.getLatitude();
                 aDoubleLongitude = mLocation.getLongitude();
 
-                executeFusedCallback(aDoubleLatitude, aDoubleLongitude);
-                checkProvider();
+                executeFusedCallback(aDoubleLatitude, aDoubleLongitude ,checkProvider());
 
             }
 
@@ -173,15 +171,16 @@ public class FusedLocation {
             public void onLocationAvailability(LocationAvailability locationAvailability) {
 
                 super.onLocationAvailability(locationAvailability);
-                Log.v("ppking", "onLocationAvailability ! " + locationAvailability.toString());
+                Log.v("ppking", "onLocationAvailability ! " + locationAvailability.isLocationAvailable());
                 if (!locationAvailability.isLocationAvailable()) {
                     startTime = System.currentTimeMillis();
                     Toast.makeText(mActivity, "目前定位還未成功，請稍後", Toast.LENGTH_SHORT).show();
-                    checkProvider();
+
                 } else {
                     if (startTime != 0) {
                         endTime = System.currentTimeMillis();
                         long totTime = endTime - startTime;
+                        executeChangeAccuracyTime(totTime);
                         Toast.makeText(mActivity, "定位成功,花費時間為 : " + totTime / 1000 + " 秒", Toast.LENGTH_SHORT).show();
                     }
 
@@ -190,7 +189,13 @@ public class FusedLocation {
         };
     }
 
-    private void checkProvider() {
+    public String checkProvider() {
+//        boolean gpsUsable = locationSettingsStates.isGpsUsable();
+//        boolean gpsPresent = locationSettingsStates.isGpsPresent();
+//
+//        boolean networkUsable = locationSettingsStates.isNetworkLocationUsable();
+//        boolean networkPresent = locationSettingsStates.isNetworkLocationPresent();
+
         boolean gpsUsable = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         boolean gpsPresent = mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
 
@@ -200,22 +205,30 @@ public class FusedLocation {
 
         if (gpsPresent && gpsUsable) {
             Log.v("ppking", "GPS PROVIDER");
+            provider = "GPS";
         } else if (networkPresent && networkUsable) {
             Log.v("ppking", "NET PROVIDER");
+            provider = "NET";
         } else {
             Log.v("ppking", "NO PROVIDER!!");
+            provider = "None";
         }
+        return provider;
     }
 
     public void destroy() {
         warringCount = 0;
         fusedList.clear();
         locationSettingsRequest = null;
+        settingRequestBuilder =null;
         locationRequest = null;
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
         fusedLocationProviderClient = null;
         settingsClient = null;
         mPackageManager = null;
         mLocationManager = null;
+        locationCallback = null;
+        mLocation = null;
     }
 
     private List<FusedCallback> fusedList = new ArrayList<>();
@@ -225,17 +238,26 @@ public class FusedLocation {
     }
 
     public interface FusedCallback {
-        void getLocation(double latitude, double longitude);
+        void getLocation(double latitude, double longitude , String provider);
+        void getChangeAccuracyTime(long time);
     }
 
-    private void executeFusedCallback(double latitude, double longitude) {
+    private void executeFusedCallback(double latitude, double longitude , String provider) {
 
         for (FusedCallback fusedCallback : fusedList
                 ) {
             if (fusedCallback != null) {
-                fusedCallback.getLocation(latitude, longitude);
+                fusedCallback.getLocation(latitude, longitude , provider);
             }
         }
+    }
 
+    private void executeChangeAccuracyTime(long time){
+        for (FusedCallback fusedCallback : fusedList
+                ) {
+            if (fusedCallback != null) {
+                fusedCallback.getChangeAccuracyTime(time);
+            }
+        }
     }
 }

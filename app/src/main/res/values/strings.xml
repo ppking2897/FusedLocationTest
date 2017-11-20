@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">FusedLocationTest</string>
+    <string name="last_catchTime">最後獲取時間 :</string>
+    <string name="provider">提供定位設備 :</string>
+    <string name="return_time">回傳時間</string>
+    <string name="accept_return_time">確定時間</string>
+    <string name="turn_off">關</string>
+    <string name="turn_on">開</string>
+    <string name="gps">GPS</string>
+    <string name="location_text">經緯度座標</string>
+    <string name="finish_location">結束定位</string>
 </resources>
