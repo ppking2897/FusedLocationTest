@@ -37,9 +37,10 @@
         android:orientation="vertical"
         >
         <LinearLayout
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:baselineAligned="false"
             android:layout_marginTop="15dp"
             >
@@ -60,33 +61,58 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     />
+
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                >
+
+                <Switch
+                    android:id="@+id/GPS_Switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+
+
+                    android:switchMinWidth="50dp"
+                    android:text="@string/gps"
+                    android:textOff="@string/turn_off"
+                    android:textOn="@string/turn_on"
+                    />
+                <Switch
+                    android:id="@+id/finish_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:switchMinWidth="50dp"
+                    android:text="@string/finish_location"
+                    android:textOff="@string/turn_off"
+                    android:textOn="@string/turn_on"
+                    />
+
             </LinearLayout>
 
-            <Switch
-                android:id="@+id/GPS_Swich"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:layout_weight="1"
-                android:switchMinWidth="50dp"
-                android:text="@string/gps"
-                android:textOff="@string/turn_off"
-                android:textOn="@string/turn_on" />
-            <Switch
-                android:id="@+id/finish_location"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:switchMinWidth="50dp"
-                android:text="@string/finish_location"
-                android:textOff="@string/turn_off"
-                android:textOn="@string/turn_on"
-                android:layout_gravity="center"
-                />
+
+
         </LinearLayout>
 
         <TextView
-            android:layout_marginTop="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="30dp"
+            android:background="#000"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/show_change_time"
+            android:gravity="center"
+            />
+        <TextView
             android:id="@+id/changeAccuracyTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

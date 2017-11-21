@@ -2,19 +2,20 @@ package com.example.shiningtechw.fusedlocationtest;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
 
     @BindView(R.id.whichProvider_0)
     TextView whichProvider0;
@@ -34,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
     TextView locationTimeGet;
     @BindView(R.id.changeAccuracyTime)
     TextView changeAccuracyTime;
-    @BindView(R.id.GPS_Swich)
-    Switch GPSSwich;
+    @BindView(R.id.GPS_Switch)
+    Switch GPSSwitch;
     @BindView(R.id.finish_location)
     Switch finishLocation;
     @BindView(R.id.setIntervalTime)
@@ -43,30 +44,35 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.returnIntervalTime)
     EditText returnIntervalTime;
 
-    private int REQUEST_PERMISSIONS_REQUEST_CODE = 1111;
     private final int REQUEST_CHECK_SETTING = 123;
-    private int intervalTime = 10000;
-    private int fastTime = 5000;
 
-    private FusedLocation mGPSFusedLocation;
+    private FusedLocationImp mGPSFusedLocation;
 
     private List<String> lists = new ArrayList<>();
+
+    private ToastHelper mToastHelper = new ToastHelper(this);
+    private LocationManager mLocationManager;
+    private PackageManager mPackageManager;
+    private PermissionCheckImp permissionCheckImp;
+
+    private String[] permissions = {android.Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+    private int REQUEST_PERMISSIONS_REQUEST_CODE = 1111;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        checkGPSUsable();
+        permissionCheckImp = new PermissionCheckImp(this);
 
-        getGPSLocation();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if (!checkPermissions()) {
-            requestPermissions();
-        }
+        requestPermission();
     }
 
     @Override
@@ -75,26 +81,12 @@ public class MainActivity extends AppCompatActivity {
         mGPSFusedLocation.destroy();
     }
 
-    //權限要求
-    private boolean checkPermissions() {
-        int permissionState = ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION);
-        return permissionState == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestPermissions() {
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
-                REQUEST_PERMISSIONS_REQUEST_CODE);
-    }
-
+    //權限結果事件觸發
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         for (int grantResult : grantResults) {
             if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "請允許權限,否則無法定位", Toast.LENGTH_SHORT).show();
-            } else {
-
+               permissionCheckImp.resultCallback(false);
             }
         }
     }
@@ -107,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
                 switch (resultCode) {
                     case Activity.RESULT_OK:
                         Log.v("ppking", "RESULT_OK !!");
-                        getGPSLocation();
+                        onViewClicked(setIntervalTime);
                         break;
                     case Activity.RESULT_CANCELED:
                         Log.v("ppking", "RESULT_CANCELED !!");
@@ -119,8 +111,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void getGPSLocation() {
-        mGPSFusedLocation = new FusedLocation(this);
+    public void getGPSLocation(int intervalTime , int fastTime) {
+        mGPSFusedLocation = new FusedLocationImp();
+        mGPSFusedLocation.initProviderClient(this);
         mGPSFusedLocation.createLocationRequest(intervalTime, fastTime, PriorityDefine.PRIORITY_HIGH_ACCURACY);
         mGPSFusedLocation.startLocationUpdates();
         mGPSFusedLocation.setFusedCallback(new FusedLocation.FusedCallback() {
@@ -129,6 +122,12 @@ public class MainActivity extends AppCompatActivity {
                 DateFormat dateFormat = DateFormat.getDateTimeInstance();
                 Date date = new Date();
                 whichProvider0.setText(provider);
+
+                if (provider.equals("GPS")){
+                    GPSSwitch.setChecked(true);
+                }else{
+                    GPSSwitch.setChecked(false);
+                }
 
                 lists.add(0, dateFormat.format(date) + "\n" + latitude + "    " + longitude + "\n");
                 locationTimeGet.setText("");
@@ -139,45 +138,82 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void getChangeAccuracyTime(long time) {
-                changeAccuracyTime.setText(String.format("%s秒", String.valueOf(time / 1000)));
+            public void getChangeAccuracyMessage(String message) {
+                changeAccuracyTime.setText(message);
             }
         });
     }
 
-
-    @OnClick({R.id.GPS_Swich, R.id.finish_location, R.id.setIntervalTime})
+    @OnClick({R.id.GPS_Switch, R.id.finish_location, R.id.setIntervalTime})
     public void onViewClicked(View view) {
-        switch (view.getId()) {
-            case R.id.GPS_Swich:
-                break;
-            case R.id.finish_location:
-                if (finishLocation.isChecked()) {
-                    mGPSFusedLocation.destroy();
-                    mGPSFusedLocation = null;
-                } else if (!finishLocation.isChecked()) {
-                    getGPSLocation();
-                }
-                break;
-            case R.id.setIntervalTime:
-                int time = Integer.parseInt(returnIntervalTime.getText().toString());
-                if (time!=0){
-                    if (mGPSFusedLocation == null){
-                        getGPSLocation();
-                    }else{
-                        mGPSFusedLocation.destroy();
-                        getGPSLocation();
+        if (requestPermission()){
+            switch (view.getId()) {
+                case R.id.GPS_Switch:
+                    checkGPSUsable();
+                    break;
+
+                case R.id.finish_location:
+                    if (finishLocation.isChecked()) {
+                        if (mGPSFusedLocation!=null){
+                            lists.clear();
+                            locationTimeGet.setText("");
+                            mGPSFusedLocation.destroy();
+                            mGPSFusedLocation = null;
+                            changeAccuracyTime.setText("");
+                        }
                     }
-                }
+                    break;
+
+                case R.id.setIntervalTime:
+                    if (!returnIntervalTime.getText().toString().equals("")){
+                        int time = Integer.parseInt(returnIntervalTime.getText().toString())*1000;
+                        if (mGPSFusedLocation == null){
+                            getGPSLocation(time , time);
+                        }else{
+                            mGPSFusedLocation.destroy();
+                            getGPSLocation(time , time);
+                        }
+                        mToastHelper.showMyToast("設定回傳的時間為"+ returnIntervalTime.getText().toString() + "秒");
+
+                        InputMethodManager inputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (inputMethodManager != null) {
+                            inputMethodManager.hideSoftInputFromWindow(returnIntervalTime.getWindowToken() , 0);
+                        }
+                        //結束定位顯示為關
+                        finishLocation.setChecked(false);
+
+                    }else{
+                        mToastHelper.showMyToast("請輸入時間,單位為秒,盡量大於5秒");
+                    }
+                    break;
+            }
         }
     }
-//    public void setTime(View view) {
-//
-//        if (Integer.parseInt(setIntervalTime.getText().toString()) !=0){
-//
-//        }
-//                if (mGPSFusedLocation == null){
-//                    getGPSLocation();
-//                }
-//    }
+
+    public void checkGPSUsable(){
+        mPackageManager = this.getPackageManager();
+        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+        boolean gpsUsable = false;
+        if (mLocationManager != null) {
+            gpsUsable = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        }
+        boolean gpsPresent = mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+
+        if (gpsPresent && gpsUsable){
+            GPSSwitch.setChecked(true);
+        }else{
+            GPSSwitch.setChecked(false);
+        }
+    }
+
+    public boolean requestPermission(){
+        if (!permissionCheckImp.checkPermissions(permissions)) {
+            permissionCheckImp.requestPermissions(permissions , REQUEST_PERMISSIONS_REQUEST_CODE);
+            return false;
+        }
+
+        return true;
+    }
+
 }
