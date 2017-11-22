@@ -3,7 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/FusedLocationTest.iml" filepath="$PROJECT_DIR$/FusedLocationTest.iml" />
+      <module fileurl="file://D:\Android Project\FusedLocationTest00\FusedLocationTest.iml" filepath="D:\Android Project\FusedLocationTest00\FusedLocationTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://D:\Android Project\FusedLocationTest00\app\app.iml" filepath="D:\Android Project\FusedLocationTest00\app\app.iml" />
     </modules>
   </component>
 </project>
