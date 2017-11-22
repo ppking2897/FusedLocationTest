@@ -22,6 +22,7 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -65,6 +66,13 @@ public class FusedLocationImp implements FusedLocation  {
             @Override
             public void onSuccess(LocationSettingsResponse locationSettingResponse) {
                 Log.v("ppking", "OnSuccess  ");
+                LocationSettingsStates locationSettingsStates = locationSettingResponse.getLocationSettingsStates();
+                boolean gpsUsable = locationSettingsStates.isGpsUsable();
+                boolean gpsPresent = locationSettingsStates.isGpsPresent();
+
+                Log.v("ppking", "gpsUsable  " + gpsUsable );
+                Log.v("ppking", "gpsPresent  " + gpsPresent );
+
                 fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
             }
         };
@@ -104,6 +112,7 @@ public class FusedLocationImp implements FusedLocation  {
                 .addOnFailureListener(mActivity, checkLocationSettingsFailure());
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void initProviderClient(Activity activity) {
         this.mActivity = activity;
@@ -112,6 +121,8 @@ public class FusedLocationImp implements FusedLocation  {
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(mActivity);
         settingsClient = LocationServices.getSettingsClient(mActivity);
+
+
     }
 
     @Override
@@ -119,6 +130,13 @@ public class FusedLocationImp implements FusedLocation  {
         locationRequest.setInterval(intervalTime);
         locationRequest.setFastestInterval(fastTime);
         locationRequest.setPriority(type);
+        //設置存在多久時間
+        //locationRequest.setExpirationDuration(30000);
+
+        //還不確定
+        //locationRequest.setExpirationTime(30000);
+        //回傳幾次經緯度就終止
+        locationRequest.setNumUpdates(5);
 
         settingRequestBuilder.addLocationRequest(locationRequest);
         locationSettingsRequest = settingRequestBuilder.build();
@@ -259,5 +277,13 @@ public class FusedLocationImp implements FusedLocation  {
                 fusedCallback.getChangeAccuracyMessage(message);
             }
         }
+    }
+
+    public Location mockLocation(double lat , double lng , float accuracy){
+        Location newLocation = new Location("PP");
+        newLocation.setLatitude(lat);
+        newLocation.setLongitude(lng);
+        newLocation.setAccuracy(accuracy);
+        return newLocation;
     }
 }

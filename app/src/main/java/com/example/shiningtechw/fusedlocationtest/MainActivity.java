@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity{
     private PackageManager mPackageManager;
     private PermissionCheckImp permissionCheckImp;
 
-    private String[] permissions = {android.Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+    private String[] permissions = {android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION};
     private int REQUEST_PERMISSIONS_REQUEST_CODE = 1111;
 
 
