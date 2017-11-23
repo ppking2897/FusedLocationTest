@@ -27,7 +27,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.whichProvider_0)
     TextView whichProvider0;
@@ -39,12 +39,17 @@ public class MainActivity extends AppCompatActivity{
     Switch GPSSwitch;
     @BindView(R.id.finish_location)
     Switch finishLocation;
-    @BindView(R.id.setIntervalTime)
-    Button setIntervalTime;
+
     @BindView(R.id.returnIntervalTime)
     EditText returnIntervalTime;
 
     private final int REQUEST_CHECK_SETTING = 123;
+    @BindView(R.id.setHighAccuracy)
+    Button setHighAccuracy;
+    @BindView(R.id.setBalanceAccuracy)
+    Button setBalanceAccuracy;
+    @BindView(R.id.setLowAccuracy)
+    Button setLowAccuracy;
 
     private FusedLocationImp mGPSFusedLocation;
 
@@ -55,7 +60,7 @@ public class MainActivity extends AppCompatActivity{
     private PackageManager mPackageManager;
     private PermissionCheckImp permissionCheckImp;
 
-    private String[] permissions = {android.Manifest.permission.ACCESS_COARSE_LOCATION,
+    private String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION};
     private int REQUEST_PERMISSIONS_REQUEST_CODE = 1111;
 
@@ -87,7 +92,7 @@ public class MainActivity extends AppCompatActivity{
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         for (int grantResult : grantResults) {
             if (grantResult != PackageManager.PERMISSION_GRANTED) {
-               permissionCheckImp.resultCallback(false);
+                permissionCheckImp.resultCallback(false);
             }
         }
     }
@@ -100,11 +105,9 @@ public class MainActivity extends AppCompatActivity{
                 switch (resultCode) {
                     case Activity.RESULT_OK:
                         Log.v("ppking", "RESULT_OK !!");
-                        onViewClicked(setIntervalTime);
                         break;
                     case Activity.RESULT_CANCELED:
                         Log.v("ppking", "RESULT_CANCELED !!");
-                        mGPSFusedLocation.startLocationUpdates();
                         break;
                 }
                 break;
@@ -112,11 +115,7 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    public void getGPSLocation(int intervalTime , int fastTime) {
-        mGPSFusedLocation = new FusedLocationImp();
-        mGPSFusedLocation.initProviderClient(this);
-        mGPSFusedLocation.createLocationRequest(intervalTime, fastTime, PriorityDefine.PRIORITY_HIGH_ACCURACY);
-        mGPSFusedLocation.startLocationUpdates();
+    public void getLocation() {
         mGPSFusedLocation.setFusedCallback(new FusedLocation.FusedCallback() {
             @Override
             public void getLocation(double latitude, double longitude, String provider) {
@@ -124,9 +123,9 @@ public class MainActivity extends AppCompatActivity{
                 Date date = new Date();
                 whichProvider0.setText(provider);
 
-                if (provider.equals("GPS")){
+                if (provider.equals("GPS")) {
                     GPSSwitch.setChecked(true);
-                }else{
+                } else {
                     GPSSwitch.setChecked(false);
                 }
 
@@ -137,7 +136,6 @@ public class MainActivity extends AppCompatActivity{
                     locationTimeGet.append(String.format("%s", lists.get(i) + "\n"));
                 }
             }
-
             @Override
             public void getChangeAccuracyMessage(String message) {
                 changeAccuracyTime.setText(message);
@@ -145,53 +143,7 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
-    @OnClick({R.id.GPS_Switch, R.id.finish_location, R.id.setIntervalTime})
-    public void onViewClicked(View view) {
-        if (requestPermission()){
-            switch (view.getId()) {
-                case R.id.GPS_Switch:
-                    checkGPSUsable();
-                    break;
-
-                case R.id.finish_location:
-                    if (finishLocation.isChecked()) {
-                        if (mGPSFusedLocation!=null){
-                            lists.clear();
-                            locationTimeGet.setText("");
-                            mGPSFusedLocation.destroy();
-                            mGPSFusedLocation = null;
-                            changeAccuracyTime.setText("");
-                        }
-                    }
-                    break;
-
-                case R.id.setIntervalTime:
-                    if (!returnIntervalTime.getText().toString().equals("")){
-                        int time = Integer.parseInt(returnIntervalTime.getText().toString())*1000;
-                        if (mGPSFusedLocation == null){
-                            getGPSLocation(time , time);
-                        }else{
-                            mGPSFusedLocation.destroy();
-                            getGPSLocation(time , time);
-                        }
-                        mToastHelper.showMyToast("設定回傳的時間為"+ returnIntervalTime.getText().toString() + "秒");
-
-                        InputMethodManager inputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                        if (inputMethodManager != null) {
-                            inputMethodManager.hideSoftInputFromWindow(returnIntervalTime.getWindowToken() , 0);
-                        }
-                        //結束定位顯示為關
-                        finishLocation.setChecked(false);
-
-                    }else{
-                        mToastHelper.showMyToast("請輸入時間,單位為秒,盡量大於5秒");
-                    }
-                    break;
-            }
-        }
-    }
-
-    public void checkGPSUsable(){
+    public void checkGPSUsable() {
         mPackageManager = this.getPackageManager();
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
@@ -201,20 +153,82 @@ public class MainActivity extends AppCompatActivity{
         }
         boolean gpsPresent = mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
 
-        if (gpsPresent && gpsUsable){
+        if (gpsPresent && gpsUsable) {
             GPSSwitch.setChecked(true);
-        }else{
+        } else {
             GPSSwitch.setChecked(false);
         }
     }
 
-    public boolean requestPermission(){
+    public boolean requestPermission() {
         if (!permissionCheckImp.checkPermissions(permissions)) {
-            permissionCheckImp.requestPermissions(permissions , REQUEST_PERMISSIONS_REQUEST_CODE);
+            permissionCheckImp.requestPermissions(permissions, REQUEST_PERMISSIONS_REQUEST_CODE);
             return false;
         }
 
         return true;
     }
 
+    public void setAccuracy(@PriorityDefine.PriorityType int type) {
+        if (!returnIntervalTime.getText().toString().equals("")) {
+            int time = Integer.parseInt(returnIntervalTime.getText().toString()) * 1000;
+            if (mGPSFusedLocation != null) {
+                mGPSFusedLocation.destroy();
+            }
+            mGPSFusedLocation = new FusedLocationImp(this);
+            mGPSFusedLocation.createLocationRequest(time, time, type);
+            mGPSFusedLocation.startLocationUpdates();
+
+            getLocation();
+
+            mToastHelper.showMyToast("設定回傳的時間為" + returnIntervalTime.getText().toString() + "秒");
+
+            //按下button關閉鍵盤
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (inputMethodManager != null) {
+                inputMethodManager.hideSoftInputFromWindow(returnIntervalTime.getWindowToken(), 0);
+            }
+            //結束定位顯示為關
+            finishLocation.setChecked(false);
+
+        } else {
+            mToastHelper.showMyToast("請輸入時間,單位為秒,盡量大於5秒");
+        }
+    }
+
+    @OnClick({R.id.setHighAccuracy, R.id.setBalanceAccuracy, R.id.setLowAccuracy,
+            R.id.GPS_Switch, R.id.finish_location})
+    public void onViewClicked(View view) {
+        if (requestPermission()) {
+            switch (view.getId()) {
+                case R.id.GPS_Switch:
+                    checkGPSUsable();
+                    break;
+
+                case R.id.finish_location:
+                    if (finishLocation.isChecked()) {
+                        if (mGPSFusedLocation != null) {
+                            lists.clear();
+                            locationTimeGet.setText("");
+                            mGPSFusedLocation.destroy();
+                            mGPSFusedLocation = null;
+                            changeAccuracyTime.setText("");
+                        }
+                    }
+                    break;
+
+                case R.id.setHighAccuracy:
+                    setAccuracy(PriorityDefine.PRIORITY_HIGH_ACCURACY);
+                    break;
+
+                case R.id.setBalanceAccuracy:
+                    setAccuracy(PriorityDefine.PRIORITY_BALANCED_POWER_ACCURACY);
+                    break;
+
+                case R.id.setLowAccuracy:
+                    setAccuracy(PriorityDefine.PRIORITY_LOW_POWER);
+                    break;
+            }
+        }
+    }
 }

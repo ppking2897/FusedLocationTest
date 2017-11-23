@@ -8,7 +8,6 @@ import android.app.Activity;
 
 public interface FusedLocation {
 
-    void initProviderClient(Activity activity);
     void createLocationRequest(long intervalTime , long fastTime , @PriorityDefine.PriorityType int type);
     void startLocationUpdates();
     void createLocationCallback();

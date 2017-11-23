@@ -3,11 +3,13 @@
     <string name="last_catchTime">最後獲取時間 :</string>
     <string name="provider">提供定位設備</string>
     <string name="return_time">回傳時間為幾秒?</string>
-    <string name="accept_return_time">確定時間</string>
+    <string name="high">High設定</string>
     <string name="turn_off">關</string>
     <string name="turn_on">開</string>
     <string name="gps">GPS</string>
     <string name="location_text">經緯度座標</string>
     <string name="finish_location">結束定位</string>
     <string name="show_change_time">轉換定位所需時間</string>
+    <string name="balance">Balance設定</string>
+    <string name="low">LOW設定</string>
 </resources>

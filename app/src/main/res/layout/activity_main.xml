@@ -13,19 +13,41 @@
         >
         <EditText
             android:id="@+id/returnIntervalTime"
-            android:layout_weight="3"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number"
             android:hint="@string/return_time"
             android:gravity="center"
             />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
         <Button
-            android:id="@+id/setIntervalTime"
+            android:id="@+id/setHighAccuracy"
             android:layout_weight="1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/accept_return_time"
+            android:text="@string/high"
+            />
+        <Button
+            android:id="@+id/setBalanceAccuracy"
+            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/balance"
+            />
+        <Button
+            android:id="@+id/setLowAccuracy"
+            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/low"
             />
 
     </LinearLayout>
