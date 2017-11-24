@@ -3,13 +3,17 @@ package com.example.shiningtechw.fusedlocationtest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationCallback;
@@ -19,6 +23,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -37,15 +42,22 @@ import java.util.TimerTask;
 
 public class FusedLocationImp implements FusedLocation  {
     private Activity mActivity;
-    private FusedLocationProviderClient fusedLocationProviderClient;
-    private SettingsClient settingsClient;
-    private LocationSettingsRequest locationSettingsRequest;
-    private LocationCallback locationCallback;
-    private LocationRequest locationRequest = new LocationRequest();
-    private LocationSettingsRequest.Builder settingRequestBuilder = new LocationSettingsRequest.Builder();
+    private FusedLocationProviderClient fusedLocationGpsProviderClient;
+
+    private LocationCallback locationGpsCallback;
+
+    private LocationRequest locationGpsRequest;
+
+    private LocationSettingsRequest.Builder settingGpsRequestBuilder;
+
+    private SettingsClient settingsGpsClient;
+
+    private LocationSettingsRequest locationGpsSettingsRequest;
 
     public final static int REQUEST_CHECK_SETTING = 123;
-    private Location mLocation;
+    private Location mGpsLocation;
+    private Location mNetLocation;
+
     private LocationManager mLocationManager;
     private PackageManager mPackageManager;
     private long startTime, endTime;
@@ -53,15 +65,15 @@ public class FusedLocationImp implements FusedLocation  {
     private String provider;
     private int getLocationCount;
     private Timer lostGPSLocationTimer;
+    private boolean isNoSignal;
+    private long mIntervalTime , mFastTime;
 
 
     public FusedLocationImp (Activity activity){
         this.mActivity = activity;
         mPackageManager = activity.getPackageManager();
         mLocationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
-
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(mActivity);
-        settingsClient = LocationServices.getSettingsClient(mActivity);
+        initClient();
 
     }
 
@@ -78,8 +90,7 @@ public class FusedLocationImp implements FusedLocation  {
                 Log.v("ppking", "gpsUsable  " + gpsUsable );
                 Log.v("ppking", "gpsPresent  " + gpsPresent );
 
-                fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
-
+                fusedLocationGpsProviderClient.requestLocationUpdates(locationGpsRequest, locationGpsCallback, Looper.myLooper());
             }
         };
     }
@@ -88,71 +99,64 @@ public class FusedLocationImp implements FusedLocation  {
         return new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-
                 Log.v("ppking", "checkLocationSettingsFailure ");
-//                int statusCode = ((ApiException) e).getStatusCode();
-//                switch (statusCode) {
-//                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-//                        //將狀態丟到系統，並由系統解決目前的問題，GPS未開啟->要求開啟，不需到設定內設定
-//                        ResolvableApiException rae = (ResolvableApiException) e;
-//                        try {
-//                            rae.startResolutionForResult(mActivity, REQUEST_CHECK_SETTING);
-//                        } catch (IntentSender.SendIntentException e1) {
-//                            e1.printStackTrace();
-//                        }
-//                        break;
-//                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-//                        String errorMessage = "Location settings are inadequate, and cannot be " +
-//                                "fixed here. Fix in Settings.";
-//                        Toast.makeText(mActivity, errorMessage, Toast.LENGTH_LONG).show();
-//                }
+                int statusCode = ((ApiException) e).getStatusCode();
+                switch (statusCode) {
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        //將狀態丟到系統，並由系統解決目前的問題，GPS未開啟->要求開啟，不需到設定內設定
+                        ResolvableApiException rae = (ResolvableApiException) e;
+                        try {
+                            rae.startResolutionForResult(mActivity, REQUEST_CHECK_SETTING);
+                        } catch (IntentSender.SendIntentException e1) {
+                            e1.printStackTrace();
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        String errorMessage = "Location settings are inadequate, and cannot be " +
+                                "fixed here. Fix in Settings.";
+                        Toast.makeText(mActivity, errorMessage, Toast.LENGTH_LONG).show();
+                }
             }
         };
     }
     @Override
     public void startLocationUpdates() {
-        if (lostGPSLocationTimer == null){
+        if (lostGPSLocationTimer == null && !isNoSignal){
             lostGPSLocationTimer = new Timer();
             lostGPSLocationTimer.schedule(new TaskNetProvider() , 0 , 1000);
         }
-        settingsClient.checkLocationSettings(locationSettingsRequest)
+        settingsGpsClient.checkLocationSettings(locationGpsSettingsRequest)
                 .addOnSuccessListener(mActivity, checkLocationSettingsSuccess())
                 .addOnFailureListener(mActivity, checkLocationSettingsFailure());
     }
 
     @Override
     public void createLocationRequest(long intervalTime, long fastTime, int type) {
-        locationRequest = LocationRequest.create();
-        locationRequest.setInterval(intervalTime);
-        locationRequest.setFastestInterval(fastTime);
-        locationRequest.setPriority(type);
-        //設置存在多久時間
-        //locationRequest.setExpirationDuration(30000);
+        locationGpsRequest.setInterval(intervalTime);
+        locationGpsRequest.setFastestInterval(fastTime);
+        locationGpsRequest.setPriority(type);
 
-        //還不確定
-        //locationRequest.setExpirationTime(30000);
-        //回傳幾次經緯度就終止
-        //locationRequest.setNumUpdates(5);
+        mIntervalTime =intervalTime;
+        mFastTime =fastTime;
 
-        settingRequestBuilder.addLocationRequest(locationRequest);
-
-        locationSettingsRequest = settingRequestBuilder.build();
+        settingGpsRequestBuilder.addLocationRequest(locationGpsRequest);
+        locationGpsSettingsRequest = settingGpsRequestBuilder.build();
 
         createLocationCallback();
     }
 
     @Override
     public void createLocationCallback() {
-        locationCallback = new LocationCallback() {
+        locationGpsCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
 
-                mLocation = locationResult.getLastLocation();
-                Log.v("ppking" , "aDoubleLatitude " + mLocation.getLatitude());
-                Log.v("ppking" , "aDoubleLongitude " + mLocation.getLongitude());
-                aDoubleLatitude = mLocation.getLatitude();
-                aDoubleLongitude = mLocation.getLongitude();
+                mGpsLocation = locationResult.getLastLocation();
+                Log.v("ppking" , "GpsLatitude " + mGpsLocation.getLatitude());
+                Log.v("ppking" , "GpsLongitude " + mGpsLocation.getLongitude());
+                aDoubleLatitude = mGpsLocation.getLatitude();
+                aDoubleLongitude = mGpsLocation.getLongitude();
 
                 getLocationCount=0;
 
@@ -165,7 +169,7 @@ public class FusedLocationImp implements FusedLocation  {
             public void onLocationAvailability(LocationAvailability locationAvailability) {
 
                 super.onLocationAvailability(locationAvailability);
-                Log.v("ppking", "onLocationAvailability ! " + locationAvailability.isLocationAvailable());
+                Log.v("ppking", "GPSonLocationAvailability ! " + locationAvailability.isLocationAvailable());
                 if (!locationAvailability.isLocationAvailable()) {
                     startTime = System.currentTimeMillis();
                     executeChangeAccuracyMessage("目前定位還未成功，請稍後");
@@ -190,23 +194,24 @@ public class FusedLocationImp implements FusedLocation  {
 //        boolean networkUsable = locationSettingsStates.isNetworkLocationUsable();
 //        boolean networkPresent = locationSettingsStates.isNetworkLocationPresent();
 
-        boolean gpsUsable = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        boolean gpsPresent = mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
-
-        boolean networkUsable = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        boolean networkPresent =
-                mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-
-        if (gpsPresent && gpsUsable) {
-            Log.v("ppking", "GPS PROVIDER");
-            provider = "GPS";
-        } else if (networkPresent && networkUsable) {
-            Log.v("ppking", "NET PROVIDER");
-            provider = "NET";
-        } else {
-            Log.v("ppking", "NO PROVIDER!!");
-            provider = "None";
-        }
+//        boolean gpsUsable = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+//        boolean gpsPresent = mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+//
+//        boolean networkUsable = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+//        boolean networkPresent =
+//                mPackageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+//
+//        if (gpsPresent && gpsUsable) {
+//            Log.v("ppking", "GPS PROVIDER");
+//            provider = "GPS";
+//        } else if (networkPresent && networkUsable) {
+//            Log.v("ppking", "NET PROVIDER");
+//            provider = "NET";
+//        } else {
+//            Log.v("ppking", "NO PROVIDER!!");
+//            provider = "None";
+//        }
+        provider = locationGpsRequest.getPriority()+"";
         return provider;
     }
 
@@ -220,26 +225,20 @@ public class FusedLocationImp implements FusedLocation  {
     @Override
     public void destroy() {
         fusedList.clear();
-        locationSettingsRequest = null;
-        settingRequestBuilder =null;
-        locationRequest = null;
-        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
-        fusedLocationProviderClient = null;
-        settingsClient = null;
+        locationGpsSettingsRequest = null;
+        settingGpsRequestBuilder =null;
+        locationGpsRequest = null;
+        fusedLocationGpsProviderClient.removeLocationUpdates(locationGpsCallback);
+        fusedLocationGpsProviderClient = null;
+        settingsGpsClient = null;
         mPackageManager = null;
         mLocationManager = null;
-        locationCallback = null;
-        mLocation = null;
+        locationGpsCallback = null;
+        mGpsLocation = null;
         if (lostGPSLocationTimer !=null){
             lostGPSLocationTimer.cancel();
             lostGPSLocationTimer = null;
         }
-    }
-
-    private void changeAnotherAccuracy(@PriorityDefine.PriorityType int type) {
-        locationRequest.setPriority(type);
-        settingRequestBuilder.addLocationRequest(locationRequest);
-        locationSettingsRequest = settingRequestBuilder.build();
     }
 
     private void executeFusedCallback(double latitude, double longitude , String provider) {
@@ -262,17 +261,45 @@ public class FusedLocationImp implements FusedLocation  {
     }
 
     private class TaskNetProvider extends TimerTask{
-
         @Override
         public void run() {
             getLocationCount+=1;
-            Log.v("ppking" , "getLocationCount " + getLocationCount);
-            if (getLocationCount >=20){
-                changeAnotherAccuracy(PriorityDefine.PRIORITY_BALANCED_POWER_ACCURACY);
-                startLocationUpdates();
-                lostGPSLocationTimer.cancel();
-                lostGPSLocationTimer = null;
+            if (getLocationCount >=10 && !isNoSignal){
+                isNoSignal = true;
+                clear();
+                reset(PriorityDefine.PRIORITY_BALANCED_POWER_ACCURACY);
+            }else if(isNoSignal){
+                clear();
+                reset(PriorityDefine.PRIORITY_HIGH_ACCURACY);
+                isNoSignal = false;
             }
         }
     }
+
+    public void initClient(){
+        fusedLocationGpsProviderClient = LocationServices.getFusedLocationProviderClient(mActivity);
+        settingsGpsClient = LocationServices.getSettingsClient(mActivity);
+        locationGpsRequest = new LocationRequest();
+        settingGpsRequestBuilder = new LocationSettingsRequest.Builder();
+    }
+
+    private void reset(@PriorityDefine.PriorityType int type){
+        initClient();
+        createLocationRequest(mIntervalTime , mFastTime , type);
+        startLocationUpdates();
+    }
+
+    private void clear(){
+        locationGpsSettingsRequest = null;
+        settingGpsRequestBuilder =null;
+        locationGpsRequest = null;
+        fusedLocationGpsProviderClient.removeLocationUpdates(locationGpsCallback);
+        fusedLocationGpsProviderClient = null;
+        settingsGpsClient = null;
+        mPackageManager = null;
+        mLocationManager = null;
+        locationGpsCallback = null;
+        mGpsLocation = null;
+    }
+
 }

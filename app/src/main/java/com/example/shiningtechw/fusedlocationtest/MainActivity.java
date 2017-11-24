@@ -140,6 +140,8 @@ public class MainActivity extends AppCompatActivity {
             public void getChangeAccuracyMessage(String message) {
                 changeAccuracyTime.setText(message);
             }
+
+
         });
     }
 
