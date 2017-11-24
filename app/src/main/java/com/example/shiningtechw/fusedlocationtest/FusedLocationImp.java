@@ -56,7 +56,6 @@ public class FusedLocationImp implements FusedLocation  {
 
     public final static int REQUEST_CHECK_SETTING = 123;
     private Location mGpsLocation;
-    private Location mNetLocation;
 
     private LocationManager mLocationManager;
     private PackageManager mPackageManager;
@@ -121,7 +120,8 @@ public class FusedLocationImp implements FusedLocation  {
     }
     @Override
     public void startLocationUpdates() {
-        if (lostGPSLocationTimer == null && !isNoSignal){
+        //判斷第一次才進來
+        if (lostGPSLocationTimer == null){
             lostGPSLocationTimer = new Timer();
             lostGPSLocationTimer.schedule(new TaskNetProvider() , 0 , 1000);
         }
@@ -158,6 +158,8 @@ public class FusedLocationImp implements FusedLocation  {
                 aDoubleLatitude = mGpsLocation.getLatitude();
                 aDoubleLongitude = mGpsLocation.getLongitude();
 
+
+                //若有訊號則清掉,若無TaskNetProvider累加
                 getLocationCount=0;
 
                 executeFusedCallback(aDoubleLatitude, aDoubleLongitude ,checkProvider());
@@ -260,6 +262,7 @@ public class FusedLocationImp implements FusedLocation  {
         }
     }
 
+    //觸發時所做的動作
     private class TaskNetProvider extends TimerTask{
         @Override
         public void run() {
