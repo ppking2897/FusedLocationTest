@@ -121,7 +121,13 @@ public class MainActivity extends AppCompatActivity {
             public void getLocation(double latitude, double longitude, String provider) {
                 DateFormat dateFormat = DateFormat.getDateTimeInstance();
                 Date date = new Date();
-                whichProvider0.setText(provider);
+
+                if (provider.equals("100")){
+                    whichProvider0.setText("高精確度");
+                }else if (provider.equals("102")){
+                    whichProvider0.setText("省電精確度");
+                }
+
 
                 if (provider.equals("GPS")) {
                     GPSSwitch.setChecked(true);
@@ -137,11 +143,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             @Override
-            public void getChangeAccuracyMessage(String message) {
-                changeAccuracyTime.setText(message);
+            public void getChangeAccuracyMessage(float speed) {
+                changeAccuracyTime.append(String.valueOf(speed));
             }
-
-
         });
     }
 

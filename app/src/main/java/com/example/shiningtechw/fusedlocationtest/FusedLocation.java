@@ -19,6 +19,6 @@ public interface FusedLocation {
 
     interface FusedCallback{
         void getLocation(double latitude , double longitude , String provider);
-        void getChangeAccuracyMessage(String message);
+        void getChangeAccuracyMessage(float speed);
     }
 }

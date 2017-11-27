@@ -9,7 +9,7 @@
     <string name="gps">GPS</string>
     <string name="location_text">經緯度座標</string>
     <string name="finish_location">結束定位</string>
-    <string name="show_change_time">轉換定位所需時間</string>
+    <string name="show_speed">目前裝置速度</string>
     <string name="balance">Balance設定</string>
     <string name="low">LOW設定</string>
 </resources>

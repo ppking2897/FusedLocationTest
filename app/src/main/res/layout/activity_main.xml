@@ -131,7 +131,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/show_change_time"
+            android:text="@string/show_speed"
             android:gravity="center"
             />
         <TextView

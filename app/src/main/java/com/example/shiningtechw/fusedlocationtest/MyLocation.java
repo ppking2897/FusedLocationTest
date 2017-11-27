@@ -13,13 +13,13 @@ import android.util.Log;
  * Created by ShiningTech.W on 2017/11/23.
  */
 
-public class Location {
+public class MyLocation {
     private Activity mActivity;
     private String locationProvider;
     private LocationManager locationManager;
     private LocationListener locationListener;
 
-    public Location(Activity activity){
+    public MyLocation(MainActivity activity){
         this.mActivity = activity;
         locationManager = (LocationManager)mActivity.getSystemService(Context.LOCATION_SERVICE);
         locationProvider = LocationManager.NETWORK_PROVIDER;
@@ -37,8 +37,8 @@ public class Location {
 
         @Override
         public void onLocationChanged(android.location.Location location) {
-            Log.v("ppking" , " Location getLatitude " + location.getLatitude());
-            Log.v("ppking" , " Location getLongitude " + location.getLongitude());
+            Log.v("ppking" , " MyLocation getLatitude " + location.getLatitude());
+            Log.v("ppking" , " MyLocation getLongitude " + location.getLongitude());
         }
 
         @Override

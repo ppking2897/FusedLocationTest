@@ -81,6 +81,7 @@ public class FusedLocationImp implements FusedLocation  {
             @SuppressLint("MissingPermission")
             @Override
             public void onSuccess(LocationSettingsResponse locationSettingResponse) {
+
                 Log.v("ppking", "OnSuccess  ");
                 LocationSettingsStates locationSettingsStates = locationSettingResponse.getLocationSettingsStates();
                 boolean gpsUsable = locationSettingsStates.isGpsUsable();
@@ -111,7 +112,7 @@ public class FusedLocationImp implements FusedLocation  {
                         }
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                        String errorMessage = "Location settings are inadequate, and cannot be " +
+                        String errorMessage = "MyLocation settings are inadequate, and cannot be " +
                                 "fixed here. Fix in Settings.";
                         Toast.makeText(mActivity, errorMessage, Toast.LENGTH_LONG).show();
                 }
@@ -158,11 +159,12 @@ public class FusedLocationImp implements FusedLocation  {
                 aDoubleLatitude = mGpsLocation.getLatitude();
                 aDoubleLongitude = mGpsLocation.getLongitude();
 
-
                 //若有訊號則清掉,若無TaskNetProvider累加
                 getLocationCount=0;
 
                 executeFusedCallback(aDoubleLatitude, aDoubleLongitude ,checkProvider());
+
+                executeChangeAccuracyMessage(mGpsLocation.getSpeed());
 
             }
 
@@ -172,18 +174,15 @@ public class FusedLocationImp implements FusedLocation  {
 
                 super.onLocationAvailability(locationAvailability);
                 Log.v("ppking", "GPSonLocationAvailability ! " + locationAvailability.isLocationAvailable());
-                if (!locationAvailability.isLocationAvailable()) {
-                    startTime = System.currentTimeMillis();
-                    executeChangeAccuracyMessage("目前定位還未成功，請稍後");
-
-                } else {
-                    if (startTime != 0) {
-                        endTime = System.currentTimeMillis();
-                        long totTime = endTime - startTime;
-                        executeChangeAccuracyMessage("定位成功,花費時間為 : " + totTime / 1000 + " 秒");
-                    }
-
-                }
+//                if (!locationAvailability.isLocationAvailable()) {
+//                    startTime = System.currentTimeMillis();
+//
+//                } else {
+//                    if (startTime != 0) {
+//                        endTime = System.currentTimeMillis();
+//                        long totTime = endTime - startTime;
+//                    }
+//                }
             }
         };
     }
@@ -253,11 +252,11 @@ public class FusedLocationImp implements FusedLocation  {
         }
     }
 
-    private void executeChangeAccuracyMessage(String message){
+    private void executeChangeAccuracyMessage(float speed){
         for (FusedCallback fusedCallback : fusedList
                 ) {
             if (fusedCallback != null) {
-                fusedCallback.getChangeAccuracyMessage(message);
+                fusedCallback.getChangeAccuracyMessage(speed);
             }
         }
     }
@@ -271,15 +270,17 @@ public class FusedLocationImp implements FusedLocation  {
                 isNoSignal = true;
                 clear();
                 reset(PriorityDefine.PRIORITY_BALANCED_POWER_ACCURACY);
+                checkProvider();
             }else if(isNoSignal){
                 clear();
                 reset(PriorityDefine.PRIORITY_HIGH_ACCURACY);
                 isNoSignal = false;
+                checkProvider();
             }
         }
     }
 
-    public void initClient(){
+    private void initClient(){
         fusedLocationGpsProviderClient = LocationServices.getFusedLocationProviderClient(mActivity);
         settingsGpsClient = LocationServices.getSettingsClient(mActivity);
         locationGpsRequest = new LocationRequest();
@@ -304,5 +305,4 @@ public class FusedLocationImp implements FusedLocation  {
         locationGpsCallback = null;
         mGpsLocation = null;
     }
-
 }
