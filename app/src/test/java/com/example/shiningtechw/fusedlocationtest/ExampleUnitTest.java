@@ -12,6 +12,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -23,11 +24,14 @@ import static org.junit.Assert.assertEquals;
 @RunWith(MockitoJUnitRunner.class)
 public class ExampleUnitTest {
 
+
+
     @Test
     public void test() throws Exception {
-        // Context of the app under test.
-        MainActivity activity = Mockito.mock(MainActivity.class);
-        assertEquals(4 ,4);
+       LocationLogicImp locationLogicImp = Mockito.mock(LocationLogicImp.class);
+
+       locationLogicImp.checkFusedLocationWork(100);
+
 
     }
 }
