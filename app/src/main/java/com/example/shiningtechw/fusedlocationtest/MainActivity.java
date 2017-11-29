@@ -33,8 +33,6 @@ public class MainActivity extends AppCompatActivity {
     TextView whichProvider0;
     @BindView(R.id.locationTimeGet)
     TextView locationTimeGet;
-    @BindView(R.id.changeAccuracyTime)
-    TextView changeAccuracyTime;
     @BindView(R.id.GPS_Switch)
     Switch GPSSwitch;
     @BindView(R.id.finish_location)
@@ -48,12 +46,13 @@ public class MainActivity extends AppCompatActivity {
     Button setHighAccuracy;
     @BindView(R.id.setBalanceAccuracy)
     Button setBalanceAccuracy;
-    @BindView(R.id.setLowAccuracy)
-    Button setLowAccuracy;
+    @BindView(R.id.setChangeTime)
+    EditText setChangeTime;
 
     private FusedLocationImp mGPSFusedLocation;
 
     private List<String> lists = new ArrayList<>();
+    private List<String> listsTime = new ArrayList<>();
 
     private ToastHelper mToastHelper = new ToastHelper(this);
     private LocationManager mLocationManager;
@@ -122,29 +121,29 @@ public class MainActivity extends AppCompatActivity {
                 DateFormat dateFormat = DateFormat.getDateTimeInstance();
                 Date date = new Date();
 
-                if (provider.equals("100")){
+                if (provider.equals("100")) {
                     whichProvider0.setText("高精確度");
-                }else if (provider.equals("102")){
-                    whichProvider0.setText("省電精確度");
-                }
-
-
-                if (provider.equals("GPS")) {
                     GPSSwitch.setChecked(true);
-                } else {
+                } else if (provider.equals("102")) {
+                    whichProvider0.setText("省電精確度");
                     GPSSwitch.setChecked(false);
                 }
 
-                lists.add(0, dateFormat.format(date) + "\n" + latitude + "    " + longitude + "\n");
+
+                lists.add(0, dateFormat.format(date) + "\n" + latitude + "    " + longitude + "   " + whichProvider0.getText() + "\n");
                 locationTimeGet.setText("");
 
                 for (int i = 0; i < lists.size(); i++) {
                     locationTimeGet.append(String.format("%s", lists.get(i) + "\n"));
                 }
             }
+
             @Override
-            public void getChangeAccuracyMessage(float speed) {
-                changeAccuracyTime.append(String.valueOf(speed));
+            public void getChangeAccuracyMessage(float time) {
+                listsTime.add(0, time + "秒\n");
+                for (int i = 0; i < listsTime.size(); i++) {
+//                    changeAccuracyTime.append(String.format("%s", listsTime.get(i) + "\n"));
+                }
             }
         });
     }
@@ -182,6 +181,9 @@ public class MainActivity extends AppCompatActivity {
                 mGPSFusedLocation.destroy();
             }
             mGPSFusedLocation = new FusedLocationImp(this);
+
+            mGPSFusedLocation.setChangeTime(Integer.valueOf(setChangeTime.getText().toString()));
+
             mGPSFusedLocation.createLocationRequest(time, time, type);
             mGPSFusedLocation.startLocationUpdates();
 
@@ -202,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @OnClick({R.id.setHighAccuracy, R.id.setBalanceAccuracy, R.id.setLowAccuracy,
+    @OnClick({R.id.setHighAccuracy, R.id.setBalanceAccuracy,
             R.id.GPS_Switch, R.id.finish_location})
     public void onViewClicked(View view) {
         if (requestPermission()) {
@@ -218,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
                             locationTimeGet.setText("");
                             mGPSFusedLocation.destroy();
                             mGPSFusedLocation = null;
-                            changeAccuracyTime.setText("");
+//                            changeAccuracyTime.setText("");
                         }
                     }
                     break;
@@ -231,9 +233,6 @@ public class MainActivity extends AppCompatActivity {
                     setAccuracy(PriorityDefine.PRIORITY_BALANCED_POWER_ACCURACY);
                     break;
 
-                case R.id.setLowAccuracy:
-                    setAccuracy(PriorityDefine.PRIORITY_LOW_POWER);
-                    break;
             }
         }
     }

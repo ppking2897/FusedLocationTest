@@ -1,7 +1,5 @@
 package com.example.shiningtechw.fusedlocationtest;
 
-import java.util.TimerTask;
-
 /**
  * Created by ShiningTech.W on 2017/11/27.
  */
@@ -12,7 +10,7 @@ public interface LocationLogic {
 
         void checkFusedLocationWork(int provider);
 
-        void changeFusedLocation(boolean isChange);
+        void changeFusedLocation(boolean isChange , int provider);
 
 
     }

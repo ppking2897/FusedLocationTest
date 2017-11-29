@@ -66,6 +66,8 @@ public class FusedLocationImp implements FusedLocation  {
     private Timer lostGPSLocationTimer;
     private boolean isNoSignal;
     private long mIntervalTime , mFastTime;
+    private int changeTime;
+    private int getSecondCount;
 
 
     public FusedLocationImp (Activity activity){
@@ -90,6 +92,7 @@ public class FusedLocationImp implements FusedLocation  {
                 Log.v("ppking", "gpsUsable  " + gpsUsable );
                 Log.v("ppking", "gpsPresent  " + gpsPresent );
 
+                //fusedLocationGpsProviderClient.setMockMode(true);
                 fusedLocationGpsProviderClient.requestLocationUpdates(locationGpsRequest, locationGpsCallback, Looper.myLooper());
             }
         };
@@ -164,8 +167,6 @@ public class FusedLocationImp implements FusedLocation  {
 
                 executeFusedCallback(aDoubleLatitude, aDoubleLongitude ,checkProvider());
 
-                executeChangeAccuracyMessage(mGpsLocation.getSpeed());
-
             }
 
             //當前選擇的位置判斷是否可運作
@@ -174,15 +175,14 @@ public class FusedLocationImp implements FusedLocation  {
 
                 super.onLocationAvailability(locationAvailability);
                 Log.v("ppking", "GPSonLocationAvailability ! " + locationAvailability.isLocationAvailable());
-//                if (!locationAvailability.isLocationAvailable()) {
-//                    startTime = System.currentTimeMillis();
-//
-//                } else {
-//                    if (startTime != 0) {
-//                        endTime = System.currentTimeMillis();
-//                        long totTime = endTime - startTime;
-//                    }
-//                }
+                if (!locationAvailability.isLocationAvailable()) {
+                    startTime = System.currentTimeMillis();
+
+                } else if (startTime != 0){
+                    endTime = System.currentTimeMillis();
+                    long totTime = endTime - startTime;
+                    executeChangeAccuracyMessage(totTime);
+                }
             }
         };
     }
@@ -252,11 +252,11 @@ public class FusedLocationImp implements FusedLocation  {
         }
     }
 
-    private void executeChangeAccuracyMessage(float speed){
+    private void executeChangeAccuracyMessage(float time){
         for (FusedCallback fusedCallback : fusedList
                 ) {
             if (fusedCallback != null) {
-                fusedCallback.getChangeAccuracyMessage(speed);
+                fusedCallback.getChangeAccuracyMessage(time);
             }
         }
     }
@@ -266,16 +266,21 @@ public class FusedLocationImp implements FusedLocation  {
         @Override
         public void run() {
             getLocationCount+=1;
-            if (getLocationCount >=10 && !isNoSignal){
+            //切換到balance清除為0  並以設定時間切回去高精確度  即使balance有值也要切回去
+            //一秒為基準
+            getSecondCount +=1;
+            if (getLocationCount >=changeTime && !isNoSignal){
                 isNoSignal = true;
                 clear();
                 reset(PriorityDefine.PRIORITY_BALANCED_POWER_ACCURACY);
                 checkProvider();
-            }else if(isNoSignal){
+                getSecondCount=0;
+            }else if(getSecondCount >=changeTime && isNoSignal){
                 clear();
                 reset(PriorityDefine.PRIORITY_HIGH_ACCURACY);
                 isNoSignal = false;
                 checkProvider();
+                getSecondCount =0;
             }
         }
     }
@@ -304,5 +309,9 @@ public class FusedLocationImp implements FusedLocation  {
         mLocationManager = null;
         locationGpsCallback = null;
         mGpsLocation = null;
+    }
+
+    public void setChangeTime(int time){
+        this.changeTime = time;
     }
 }

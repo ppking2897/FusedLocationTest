@@ -7,7 +7,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:focusable="true"
         android:focusableInTouchMode="true"
         >
@@ -17,6 +17,14 @@
             android:layout_height="wrap_content"
             android:inputType="number"
             android:hint="@string/return_time"
+            android:gravity="center"
+            />
+        <EditText
+            android:id="@+id/setChangeTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="@string/howTimeChange"
             android:gravity="center"
             />
 
@@ -41,13 +49,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/balance"
-            />
-        <Button
-            android:id="@+id/setLowAccuracy"
-            android:layout_weight="1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/low"
             />
 
     </LinearLayout>
@@ -119,27 +120,6 @@
 
 
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginTop="30dp"
-            android:background="#000"
-            />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/show_speed"
-            android:gravity="center"
-            />
-        <TextView
-            android:id="@+id/changeAccuracyTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="2dp"

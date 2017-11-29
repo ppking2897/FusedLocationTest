@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">定位測試</string>
     <string name="last_catchTime">最後獲取時間 :</string>
-    <string name="provider">提供定位設備</string>
+    <string name="provider">定位精確度為 :</string>
     <string name="return_time">回傳時間為幾秒?</string>
     <string name="high">High設定</string>
     <string name="turn_off">關</string>
@@ -9,7 +9,8 @@
     <string name="gps">GPS</string>
     <string name="location_text">經緯度座標</string>
     <string name="finish_location">結束定位</string>
-    <string name="show_speed">目前裝置速度</string>
+    <string name="show_speed">定位切換所需時間</string>
     <string name="balance">Balance設定</string>
     <string name="low">LOW設定</string>
+    <string name="howTimeChange">設定多久切換精確度</string>
 </resources>
